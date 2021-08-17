@@ -44,48 +44,61 @@ class addCityViewController:UIViewController
         }
     }
     @IBAction func btnAdd(_ sender: Any) {
-        
-        let alert = UIAlertController(title: "Confirmation", message: "\(txtName.text!), \(txtCity.text!) changes to be updated!",
-                                      preferredStyle: UIAlertController.Style.alert)
-        // Cancel button to not add
-        alert.addAction(UIAlertAction(title: "Cancel", style: UIAlertAction.Style.default, handler: nil))
-        //ok button to save to core data
-        alert.addAction(UIAlertAction(title: "OK", style: UIAlertAction.Style.default) {(UIAlertAction) in
-            //save to core data
-            if (self.txtCity.hasText && self.txtName.hasText)
-            {
-                if (self.selectedTrip == nil)
+        //only added cities that work with api
+        Validation.shared.validateCity(city: txtCity.text!){(valid) in
+            DispatchQueue.main.async {[unowned self] in
+                if (valid)
                 {
-                    let context = CoreDataStack.shared.persistentContainer.viewContext
-                    let fetch : NSFetchRequest<TripInfo> = TripInfo.fetchRequest()
-                    let thisTrip = TripInfo(context: context)
-                    thisTrip.name = self.txtName.text
-                    thisTrip.city = self.txtCity.text
-                    if let tripData = try? context.fetch(fetch) as [NSManagedObject]
-                    {
-                        thisTrip.orderPos = Int16(tripData.count - 1)
-                    }
-                    else
-                    {
-                        thisTrip.orderPos = 0
-                    }
-                    self.selectedTrip = thisTrip
+                    let alert = UIAlertController(title: "Confirmation", message: "\(txtName.text!), \(txtCity.text!) changes to be updated!",
+                                                  preferredStyle: UIAlertController.Style.alert)
+                    // Cancel button to not add
+                    alert.addAction(UIAlertAction(title: "Cancel", style: UIAlertAction.Style.default, handler: nil))
+                    //ok button to save to core data
+                    alert.addAction(UIAlertAction(title: "OK", style: UIAlertAction.Style.default) {(UIAlertAction) in
+                        //save to core data
+                        if (self.txtCity.hasText && self.txtName.hasText)
+                        {
+                            if (self.selectedTrip == nil)
+                            {
+                                let context = CoreDataStack.shared.persistentContainer.viewContext
+                                let fetch : NSFetchRequest<TripInfo> = TripInfo.fetchRequest()
+                                let thisTrip = TripInfo(context: context)
+                                thisTrip.name = self.txtName.text
+                                thisTrip.city = self.txtCity.text
+                                if let tripData = try? context.fetch(fetch) as [NSManagedObject]
+                                {
+                                    thisTrip.orderPos = Int16(tripData.count - 1)
+                                }
+                                else
+                                {
+                                    thisTrip.orderPos = 0
+                                }
+                                self.selectedTrip = thisTrip
+                            }
+                            else
+                            {
+                                self.selectedTrip?.city = self.txtCity.text
+                                self.selectedTrip?.name = self.txtName.text
+                            }
+                            
+                            self.addTripDelegate?.updateView()
+                            CoreDataStack.shared.saveContext()
+                        }
+                    })
+                    // show the alert
+                    self.present(alert, animated: true, completion: nil)
                 }
-                else
-                {
-                    self.selectedTrip?.city = self.txtCity.text
-                    self.selectedTrip?.name = self.txtName.text
-                }
-                
-                self.addTripDelegate?.updateView()
-                CoreDataStack.shared.saveContext()
+//                else
+//                {
+//                    let alert = UIAlertController(title: "Not supported!", message: "\(self.txtCity.text!) is currently not supported!",
+//                                                  preferredStyle: UIAlertController.Style.alert)
+//                    // Cancel button to not add
+//                    alert.addAction(UIAlertAction(title: "OK", style: UIAlertAction.Style.default, handler: nil))
+//                    self.present(alert, animated: true, completion: nil)
+//                }
             }
-        })
-        // show the alert
-        self.present(alert, animated: true, completion: nil)
-        
+        }
     }
-    
     @IBAction func btnAddTodo(_ sender: Any) {
         if (self.txtCity.hasText && self.txtName.hasText)
         {
